@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket Demo</title>
+</head>
+<body>
+
+    <h1>Hello Om</h1>
+    <h2>WebSocket Server</h2>
+    
+    <!-- this is where user types the input message in frontend-->
+    <input
+        type="text"
+        id="message-input"
+        placeholder="Enter your message here"
+    />
+
+    <button id="message-send-btn">Send</button>
+
+    <!-- this is where message will be shown -->
+    <ul id="messages-container"></ul>
+
+    <script>
+        // 1) This finds HTML elements and stores them in JavaScript variables.
+        const messageInput = document.getElementById("message-input");
+        const messageSendButton = document.getElementById("message-send-btn");
+        const messagesContainer = document.getElementById("messages-container");
+
+        // 2) Get current port from the URL, window is actually global variable in browsers
+        const { port } = window.location;
+
+        // 3) Opens the WebSocket connection
+        const connection = new WebSocket(`ws://localhost:${port}`);
+
+        // 4) When socket opens
+        connection.onopen = () => {
+            console.log("WebSocket connected");
+            addMessage("Connected to server");
+        };
+
+        // 5) When message comes from server
+        connection.onmessage = (message) => {
+            console.log("Message from server:", message);
+            const raw = message.data
+            const parsed = JSON.parse(raw)
+            const text = parsed.message
+
+            // function we made below
+            addMessage(text)
+        };
+
+        // 6) Send message when button is clicked
+        messageSendButton.addEventListener("click", () => {
+            const value = messageInput.value.trim();
+ 
+            // fallback if message is empty
+            if (!value) return;
+
+            // connection.readyState which tells you the current state of the connection.
+            /*
+                WebSocket.CONNECTING  // 0
+                WebSocket.OPEN        // 1
+                WebSocket.CLOSING     // 2
+                WebSocket.CLOSED      // 3
+            */
+            if (connection.readyState !== WebSocket.OPEN) {
+                alert("WebSocket is not open yet");
+                return;
+            }
+
+            connection.send(JSON.stringify({ message: value }));
+            addMessage(`You: ${value}`);
+            messageInput.value = "";
+        });
+
+        // 7) Small helper to show messages in UI
+        function addMessage(text) {
+            const li = document.createElement("li");
+            li.innerText = text;
+            messagesContainer.appendChild(li);
+        }
+    </script>
+
+</body>
+</html>
